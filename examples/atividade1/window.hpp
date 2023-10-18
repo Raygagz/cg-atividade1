@@ -19,23 +19,18 @@ protected:
 private:
   glm::ivec2 m_viewportSize{};
 
-  GLuint m_VAO{};
-  GLuint m_VBOVertices{};
-  GLuint m_program{};
-
   GLuint m_arenaProgram{};
+  GLuint m_ballProgram{};
 
   Arena m_arena;
+  Ball m_ball;
 
   abcg::Timer m_restartWaitTimer;
 
   ImFont *m_font{};
 
   std::default_random_engine m_randomEngine;
-  std::array<glm::vec2, 3> const m_points{{{0, 1}, {-1, -1}, {1, -1}}};
-  glm::vec2 m_P{};
 
-  void setupModel();
   void restart();
 };
 

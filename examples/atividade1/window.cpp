@@ -10,7 +10,7 @@ void Window::onCreate() {
                                  {.source = assetsPath + "arena.frag",
                                   .stage = abcg::ShaderStage::Fragment}});
 
-  m_program = abcg::createOpenGLProgram(
+  m_ballProgram = abcg::createOpenGLProgram(
       {{.source = assetsPath + "ball.vert", .stage = abcg::ShaderStage::Vertex},
        {.source = assetsPath + "ball.frag",
         .stage = abcg::ShaderStage::Fragment}});
@@ -35,37 +35,11 @@ void Window::onCreate() {
 }
 
 void Window::onPaint() {
-  // Create OpenGL buffers for drawing the point at m_P
-  setupModel();
-
-  // Set the viewport
+  abcg::glClear(GL_COLOR_BUFFER_BIT);
   abcg::glViewport(0, 0, m_viewportSize.x, m_viewportSize.y);
 
   m_arena.paint();
-
-  // Start using the shader program
-  abcg::glUseProgram(m_program);
-  // Start using VAO
-  abcg::glBindVertexArray(m_VAO);
-
-  // Draw a single point
-  abcg::glDrawArrays(GL_POINTS, 0, 1);
-
-  // End using VAO
-  abcg::glBindVertexArray(0);
-  // End using the shader program
-  abcg::glUseProgram(0);
-
-  // Randomly pick the index of a triangle vertex
-  std::uniform_int_distribution<int> intDistribution(0, m_points.size() - 1);
-  auto const index{intDistribution(m_randomEngine)};
-
-  // The new position is the midpoint between the current position and the
-  // chosen vertex position
-  m_P = (m_P + m_points.at(index)) / 2.0f;
-
-  // Print coordinates to console
-  // fmt::print("({:+.2f}, {:+.2f})\n", m_P.x, m_P.y);
+  m_ball.paint();
 }
 
 void Window::onPaintUI() {
@@ -90,42 +64,13 @@ void Window::onResize(glm::ivec2 const &size) {
 }
 
 void Window::onDestroy() {
-  // Release shader program, VBO and VAO
-  // TODO m_ball.destroy();
+  abcg::glDeleteProgram(m_arenaProgram);
+
+  m_arena.destroy();
+  m_ball.destroy();
 }
 
-void Window::setupModel() {
-  // Release previous VBO and VAO
-  abcg::glDeleteBuffers(1, &m_VBOVertices);
-  abcg::glDeleteVertexArrays(1, &m_VAO);
-
-  // Generate a new VBO and get the associated ID
-  abcg::glGenBuffers(1, &m_VBOVertices);
-  // Bind VBO in order to use it
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_VBOVertices);
-  // Upload data to VBO
-  abcg::glBufferData(GL_ARRAY_BUFFER, sizeof(m_P), &m_P, GL_STATIC_DRAW);
-  // Unbinding the VBO is allowed (data can be released now)
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  // Get location of attributes in the program
-  auto const positionAttribute{
-      abcg::glGetAttribLocation(m_program, "inPosition")};
-
-  // Create VAO
-  abcg::glGenVertexArrays(1, &m_VAO);
-
-  // Bind vertex attributes to current VAO
-  abcg::glBindVertexArray(m_VAO);
-
-  abcg::glEnableVertexAttribArray(positionAttribute);
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_VBOVertices);
-  abcg::glVertexAttribPointer(positionAttribute, 2, GL_FLOAT, GL_FALSE, 0,
-                              nullptr);
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  // End of binding to current VAO
-  abcg::glBindVertexArray(0);
+void Window::restart() {
+  m_arena.create(m_arenaProgram);
+  m_ball.create(m_ballProgram);
 }
-
-void Window::restart() { m_arena.create(m_arenaProgram); }
